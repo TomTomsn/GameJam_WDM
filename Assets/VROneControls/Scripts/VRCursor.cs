@@ -10,13 +10,21 @@ public class VRCursor : MonoBehaviour {
 
 	public static VRCursor instance;
 	
+	///////////////////////////////////////////////////////////////////	
+
+	GameObject currentTarget;
+	float playerDamage = 10f;
+	bool enemyBool = false;
+	PlayerBehavior playerBehavior;
 
 
+	/////////////////////////////////////////////////////////////////// 
 
 	void Awake()
 	{
 		instance = this;
 		if (!cursor) CreateCursor ();
+	
 	}
 
 	/// <summary>
@@ -53,6 +61,7 @@ public class VRCursor : MonoBehaviour {
         if (!cursor) CreateCursor();
         PositionCursor();
         CheckCollision();
+		ShootEnemy ();
 	}
 
     
@@ -68,6 +77,20 @@ public class VRCursor : MonoBehaviour {
         cursor.transform.localPosition = new Vector3(0,0, cursorDistance);
     }
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void ShootEnemy()
+	{
+		if (enemyBool == true) 
+		{
+			currentTarget.GetComponent<Renderer>().material.color = Color.black;
+			EnemyBehavior enemyHealth = currentTarget.GetComponent<EnemyBehavior>();
+			enemyHealth.DealDamage(-playerDamage);
+			currentTarget.GetComponent<Renderer>().material.color = Color.white;
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	public GameObject cursorPrefab;
 
 	void ShowCursor(bool value)
@@ -120,6 +143,21 @@ public class VRCursor : MonoBehaviour {
                     MenuIcon.selectedItem = mi;
                 }
             }
+
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			if(hitInfo.collider.gameObject.tag == "enemy" && Input.GetButtonDown("Jump"))
+			{
+				enemyBool = true;
+				currentTarget = hitInfo.collider.gameObject;
+			}
+			else
+			{
+				enemyBool = false;
+			}
+
+			Debug.Log(currentTarget);
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////
 			lastSelectedSo = so;
         }
 		else if (lastSelectedSo)
