@@ -10,8 +10,20 @@ public class VRCursor : MonoBehaviour {
 
 	public static VRCursor instance;
 	
+	///////////////////////////////////////////////////////////////////	
+
+	public GameObject player;
+	GameObject currentTarget;
+
+	float wallDistance;
+	float playerDamage = 10f;
+	
+	bool enemyBool = false;
+	PlayerBehavior playerBehavior;
+	RaycastHit rayHitInfo;
 
 
+	/////////////////////////////////////////////////////////////////// 
 
 	void Awake()
 	{
@@ -53,6 +65,8 @@ public class VRCursor : MonoBehaviour {
         if (!cursor) CreateCursor();
         PositionCursor();
         CheckCollision();
+		ShootEnemy ();
+		DetectWall ();
 	}
 
     
@@ -68,6 +82,81 @@ public class VRCursor : MonoBehaviour {
         cursor.transform.localPosition = new Vector3(0,0, cursorDistance);
     }
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void ShootEnemy()
+	{
+		if (enemyBool == true) 
+		{
+			currentTarget.GetComponent<Renderer>().material.color = Color.black;
+			EnemyBehavior enemyHealth = currentTarget.GetComponent<EnemyBehavior>();
+			enemyHealth.DealDamage(-playerDamage);
+			currentTarget.GetComponent<Renderer>().material.color = Color.white;
+		}
+	}
+
+	void DetectWall(){
+		
+		//Debug.Log (rayHitInfo.collider.gameObject.tag);
+		
+		wallDistance = Vector3.Distance (rayHitInfo.collider.gameObject.transform.position, player.transform.position);
+		currentTarget = rayHitInfo.collider.transform.parent.gameObject;
+		Debug.Log(wallDistance +" "+ rayHitInfo.collider.gameObject.tag+" "+currentTarget);
+		
+		switch (rayHitInfo.collider.gameObject.tag) 
+		{
+		case "Links":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z - 2), Quaternion.identity);
+				newTunnel.transform.GetChild(5).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		case "Hinten":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x + 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
+				newTunnel.transform.GetChild(2).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		case "Vorne":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x - 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
+				newTunnel.transform.GetChild(1).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		case "Rechts":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z + 2), Quaternion.identity);
+				newTunnel.transform.GetChild(4).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		case "Oben":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y + 2, currentTarget.transform.position.z), Quaternion.identity);
+				newTunnel.transform.GetChild(0).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		case "Unten":
+			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			{
+				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y - 2, currentTarget.transform.position.z), Quaternion.identity);
+				newTunnel.transform.GetChild(3).gameObject.SetActive(false);
+				rayHitInfo.collider.gameObject.SetActive(false);
+			}
+			break;
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	public GameObject cursorPrefab;
 
 	void ShowCursor(bool value)
@@ -85,6 +174,8 @@ public class VRCursor : MonoBehaviour {
         RaycastHit hitInfo;
         MenuIcon.selectedItem = null;
         if (Physics.Raycast(transform.position, cursor.transform.position - transform.position, out hitInfo)){
+			rayHitInfo = hitInfo;
+
 			if (hitInfo.collider.gameObject.tag == "Screen"){
 				ShowCursor(false);
 			}
@@ -120,6 +211,23 @@ public class VRCursor : MonoBehaviour {
                     MenuIcon.selectedItem = mi;
                 }
             }
+
+
+
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			if(hitInfo.collider.gameObject.tag == "enemy" && Input.GetButtonDown("Jump"))
+			{
+				enemyBool = true;
+				currentTarget = hitInfo.collider.gameObject;
+			}
+			else
+			{
+				enemyBool = false;
+			}
+
+			//Debug.Log(currentTarget);
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////
 			lastSelectedSo = so;
         }
 		else if (lastSelectedSo)
