@@ -3,16 +3,18 @@ using System.Collections;
 
 public class EnemyBehavior : NPCController {
 
-	public float currentHealth = 100f;
-	public float maxHealth = 100f;
+	public float currentHealth = 20f;
+	public float maxHealth = 20f;
 	public float attackRange = 50f;
-	public float doDamage = 1f;
+	public float doDamage = 15f;
 
 	public bool isDead;
+	 
 
 
 // UPDATE --------------------------------------------------------------------------
 	protected override void Update () {
+		//Objekt Rot färben - DMG damit darstellen
 		float distanceTemp = Vector3.Distance (player.transform.position, gameObject.transform.position);
 		if (controlDistance(distanceTemp)) 
 		{
@@ -65,7 +67,7 @@ public class EnemyBehavior : NPCController {
 // DAMAGE ---------------------------------------------------------------------------
 	public void DealDamage(float adj)
 	{
-		currentHealth += adj;
+		currentHealth -= adj;
 
 		if (currentHealth <= 0)
 			isDead = true;
@@ -75,6 +77,7 @@ public class EnemyBehavior : NPCController {
 
 		if (isDead == true)
 			Destroy (this.gameObject);
+
 		Debug.Log (currentHealth);
 	} //Ende void DealDamage(float adj)
 

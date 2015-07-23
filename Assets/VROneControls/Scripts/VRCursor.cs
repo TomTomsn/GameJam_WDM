@@ -13,15 +13,26 @@ public class VRCursor : MonoBehaviour {
 	///////////////////////////////////////////////////////////////////	
 
 	public GameObject player;
+	public WeaponBehavior weapon;
+
 	GameObject currentTarget;
+	GameObject nearestObjectRoom;
+	GameObject nearestObjectMowl;
+	GameObject lastInstance;
+	GameObject[] bigRooms;
+	GameObject[] rooms;
 
 	float wallDistance;
+	float cubeDistance;
+	float playerRoomDistance;
 	float playerDamage = 10f;
 	
 	bool enemyBool = false;
+	bool isRoomWall = false;
 	PlayerBehavior playerBehavior;
 	RaycastHit rayHitInfo;
-
+	RaycastHit layerInfo;
+	int layerMask = 1 << 9;
 
 	/////////////////////////////////////////////////////////////////// 
 
@@ -59,6 +70,12 @@ public class VRCursor : MonoBehaviour {
         }
         UIController.Instance.reference = gameObject;
     }
+
+	void Start()
+	{
+		rooms = GameObject.FindGameObjectsWithTag ("Tunnel");
+		bigRooms = GameObject.FindGameObjectsWithTag ("bigRoom");
+	}
 	
 	// Update is called once per frame
 	void Update () {
@@ -66,7 +83,9 @@ public class VRCursor : MonoBehaviour {
         PositionCursor();
         CheckCollision();
 		ShootEnemy ();
-		DetectWall ();
+		Digging ();
+		FindRoom ();
+
 	}
 
     
@@ -86,73 +105,345 @@ public class VRCursor : MonoBehaviour {
 
 	void ShootEnemy()
 	{
-		if (enemyBool == true) 
+		if (enemyBool == true && weapon.GetShoot()== false) 
 		{
-			currentTarget.GetComponent<Renderer>().material.color = Color.black;
-			EnemyBehavior enemyHealth = currentTarget.GetComponent<EnemyBehavior>();
-			enemyHealth.DealDamage(-playerDamage);
-			currentTarget.GetComponent<Renderer>().material.color = Color.white;
+			currentTarget.GetComponent<EnemyBehavior>().DealDamage(weapon.DoShoot());
 		}
 	}
 
-	void DetectWall(){
-		
-		//Debug.Log (rayHitInfo.collider.gameObject.tag);
-		
+	void Digging(){
+
+		GameObject[] mowlrooms = GameObject.FindGameObjectsWithTag ("Maulwurftunnel");
 		wallDistance = Vector3.Distance (rayHitInfo.collider.gameObject.transform.position, player.transform.position);
+		bool isBlockMowl = false;
+		bool isBlockRoom = false;
 		currentTarget = rayHitInfo.collider.transform.parent.gameObject;
-//		Debug.Log(wallDistance +" "+ rayHitInfo.collider.gameObject.tag+" "+currentTarget);
-		
+		//Debug.Log(wallDistance +" "+ rayHitInfo.collider.gameObject.tag+" "+currentTarget+" "+isBlockRoom+" "+cubeDistance+" "+isRoomWall);
+
+
+
 		switch (rayHitInfo.collider.gameObject.tag) 
 		{
 		case "Links":
+			for(int i = 0; i < rooms.Length; i++)
+			{
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log(cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2 && nearestObjectRoom.transform.position.z < currentTarget.transform.position.z)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
+			}
+//
+			for(int i = 0; i < mowlrooms.Length; i++)
+			{
+				nearestObjectMowl = mowlrooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+				if(cubeDistance == 2 && nearestObjectMowl.transform.position.z < currentTarget.transform.position.z)
+				{
+					isBlockMowl = true;
+					//nearestObjectMowl = mowlrooms[i].gameObject;
+					break;
+				}
+			}
+
 			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z - 2), Quaternion.identity);
-				newTunnel.transform.GetChild(5).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				if(isBlockRoom == true)
+				{
+					nearestObjectRoom.transform.GetChild(5).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockRoom = false;
+				}
+				else if(isBlockMowl == true)
+				{
+					nearestObjectMowl.transform.GetChild(5).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockMowl = false;
+				}
+				else
+				{
+					GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z - 2), Quaternion.identity);
+					newTunnel.transform.GetChild(5).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					lastInstance = newTunnel;
+				}
 			}
 			break;
 		case "Hinten":
+			for(int i = 0; i < rooms.Length; i++)
+			{
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log("for geht "+cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2  && nearestObjectRoom.transform.position.x > currentTarget.transform.position.x)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
+			}
+
+			for(int i = 0; i < mowlrooms.Length; i++)
+			{
+				nearestObjectMowl = mowlrooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+				if(cubeDistance == 2 && nearestObjectMowl.transform.position.x > currentTarget.transform.position.x)
+				{
+					isBlockMowl = true;
+					//nearestObjectMowl = mowlrooms[i].gameObject;
+					break;
+				}
+			}
+			
 			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x + 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
-				newTunnel.transform.GetChild(2).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				if(isBlockRoom == true)
+				{
+					nearestObjectRoom.transform.GetChild(2).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockRoom = false;
+				}
+				else if(isBlockMowl == true)
+				{
+					nearestObjectMowl.transform.GetChild(2).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockMowl = false;
+				}
+				else
+				{
+					GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x + 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
+					newTunnel.transform.GetChild(2).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					lastInstance = newTunnel;
+				}
 			}
 			break;
 		case "Vorne":
+			for(int i = 0; i < rooms.Length; i++)
+			{
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log("for geht "+cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2  && nearestObjectRoom.transform.position.x < currentTarget.transform.position.x)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
+			}
+			
+			for(int i = 0; i < mowlrooms.Length; i++)
+			{
+				nearestObjectMowl = mowlrooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+				if(cubeDistance == 2 && nearestObjectMowl.transform.position.x < currentTarget.transform.position.x)
+				{
+					isBlockMowl = true;
+					//nearestObjectMowl = mowlrooms[i].gameObject;
+					break;
+				}
+			}
+			
 			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x - 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
-				newTunnel.transform.GetChild(1).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				if(isBlockRoom == true)
+				{
+					nearestObjectRoom.transform.GetChild(1).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockRoom = false;
+				}
+				else if(isBlockMowl == true)
+				{
+					nearestObjectMowl.transform.GetChild(1).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockMowl = false;
+				}
+				else
+				{
+					GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x - 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
+					newTunnel.transform.GetChild(1).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					lastInstance = newTunnel;
+				}
 			}
 			break;
+					//GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x - 2, currentTarget.transform.position.y, currentTarget.transform.position.z), Quaternion.identity);
+					//newTunnel.transform.GetChild(1).gameObject.SetActive(false);
+			
 		case "Rechts":
+			for(int i = 0; i < rooms.Length; i++)
+			{
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log("for geht "+cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2 && nearestObjectRoom.transform.position.z > currentTarget.transform.position.z)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
+			}
+			
+			for(int i = 0; i < mowlrooms.Length; i++)
+			{
+				nearestObjectMowl = mowlrooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+				if(cubeDistance == 2 && nearestObjectMowl.transform.position.z > currentTarget.transform.position.z)
+				{
+					isBlockMowl = true;
+					//nearestObjectMowl = mowlrooms[i].gameObject;
+					break;
+				}
+			}
+			
 			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z + 2), Quaternion.identity);
-				newTunnel.transform.GetChild(4).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				if(isBlockRoom == true)
+				{
+					nearestObjectRoom.transform.GetChild(4).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockRoom = false;
+				}
+				else if(isBlockMowl == true)
+				{
+					nearestObjectMowl.transform.GetChild(4).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockMowl = false;
+				}
+				else
+				{
+					GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y, currentTarget.transform.position.z + 2), Quaternion.identity);
+					newTunnel.transform.GetChild(4).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					lastInstance = newTunnel;
+				}
 			}
 			break;
 		case "Oben":
+			for(int i = 0; i < rooms.Length; i++)
+			{
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log("for geht "+cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2 && nearestObjectRoom.transform.position.y > currentTarget.transform.position.y)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
+			}
+			
+			for(int i = 0; i < mowlrooms.Length; i++)
+			{
+				nearestObjectMowl = mowlrooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+				if(cubeDistance == 2 && nearestObjectMowl.transform.position.y > currentTarget.transform.position.y)
+				{
+					isBlockMowl = true;
+					//nearestObjectMowl = mowlrooms[i].gameObject;
+					break;
+				}
+			}
+			
 			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y + 2, currentTarget.transform.position.z), Quaternion.identity);
-				newTunnel.transform.GetChild(0).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				if(isBlockRoom == true)
+				{
+					nearestObjectRoom.transform.GetChild(0).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockRoom = false;
+				}
+				else if(isBlockMowl == true)
+				{
+					nearestObjectMowl.transform.GetChild(0).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					isBlockMowl = false;
+				}
+				else
+				{
+					GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y + 2, currentTarget.transform.position.z), Quaternion.identity);
+					newTunnel.transform.GetChild(0).gameObject.SetActive(false);
+					rayHitInfo.collider.gameObject.SetActive(false);
+					lastInstance = newTunnel;
+				}
 			}
 			break;
 		case "Unten":
-			if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+			for(int i = 0; i < rooms.Length; i++)
 			{
-				GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y - 2, currentTarget.transform.position.z), Quaternion.identity);
-				newTunnel.transform.GetChild(3).gameObject.SetActive(false);
-				rayHitInfo.collider.gameObject.SetActive(false);
+				nearestObjectRoom = rooms[i].gameObject;
+				cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectRoom.transform.position);//rooms[i].transform.position);
+				//Debug.Log("for geht "+cubeDistance+" "+currentTarget+" "+nearestObjectRoom);
+				if(cubeDistance == 2 && nearestObjectRoom.transform.position.y < currentTarget.transform.position.y)
+				{
+					isBlockRoom = true;
+					//nearestObjectRoom = rooms[i].gameObject;
+					break;
+				}
 			}
-			break;
+				
+				for(int i = 0; i < mowlrooms.Length; i++)
+				{
+					nearestObjectMowl = mowlrooms[i].gameObject;
+					cubeDistance = Vector3.Distance (currentTarget.transform.position, nearestObjectMowl.transform.position);//mowlrooms[i].transform.position);
+					if(cubeDistance == 2 && nearestObjectMowl.transform.position.y < currentTarget.transform.position.y)
+					{
+						isBlockMowl = true;
+						//nearestObjectMowl = mowlrooms[i].gameObject;
+						break;
+					}
+				}
+				
+				if(wallDistance <= 0.7f && Input.GetButtonDown("digging"))
+				{
+					if(isBlockRoom == true)
+					{
+						nearestObjectRoom.transform.GetChild(3).gameObject.SetActive(false);
+						rayHitInfo.collider.gameObject.SetActive(false);
+						isBlockRoom = false;
+
+					}
+					else if(isBlockMowl == true)
+					{
+						nearestObjectMowl.transform.GetChild(3).gameObject.SetActive(false);
+						rayHitInfo.collider.gameObject.SetActive(false);
+						isBlockMowl = false;
+					}
+					else
+					{
+						GameObject newTunnel = (GameObject)Instantiate(Resources.Load("Tunnel_Maulwurf"), new Vector3(currentTarget.transform.position.x, currentTarget.transform.position.y - 2, currentTarget.transform.position.z), Quaternion.identity);
+						newTunnel.transform.GetChild(3).gameObject.SetActive(false);
+						rayHitInfo.collider.gameObject.SetActive(false);
+						lastInstance = newTunnel;
+					}
+				}
+				break;
+		}
+		if (isRoomWall == true && wallDistance <= 1.4f && Input.GetButtonDown ("digging")) 
+		{
+			lastInstance.SetActive(false);
+			rayHitInfo.collider.gameObject.SetActive(false);
+			isRoomWall = false;
+		}
+	}
+
+	void FindRoom()
+	{
+		int c = 0;
+		GameObject nextRoom = bigRooms[c];
+		playerRoomDistance = Vector3.Distance (player.transform.position, nextRoom.transform.position);
+		Debug.Log (playerRoomDistance);
+		if (playerRoomDistance <= 3.3)
+		{
+			c = c+1;
+		}
+		if (c > 2)
+		{
+			c = 0;
 		}
 	}
 
@@ -173,6 +464,8 @@ public class VRCursor : MonoBehaviour {
 		ShowCursor (true);
         RaycastHit hitInfo;
         MenuIcon.selectedItem = null;
+
+
         if (Physics.Raycast(transform.position, cursor.transform.position - transform.position, out hitInfo)){
 			rayHitInfo = hitInfo;
 
@@ -224,6 +517,15 @@ public class VRCursor : MonoBehaviour {
 			else
 			{
 				enemyBool = false;
+			}
+
+			if(hitInfo.collider.gameObject.tag == "Raumwand")
+			{
+				isRoomWall = true;
+			}
+			else
+			{
+				isRoomWall = false;
 			}
 
 			//Debug.Log(currentTarget);

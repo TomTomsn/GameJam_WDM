@@ -42,9 +42,6 @@ public class NPCController : MonoBehaviour {
 
 		waypointPosition = waypoint.transform.position;
 		standartPosition = gameObject.transform.position;
-
-
-		currentWaypoint = 0;
 	} //Ende void Start()
 
 
