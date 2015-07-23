@@ -101,7 +101,7 @@ public class VRCursor : MonoBehaviour {
 		
 		wallDistance = Vector3.Distance (rayHitInfo.collider.gameObject.transform.position, player.transform.position);
 		currentTarget = rayHitInfo.collider.transform.parent.gameObject;
-		Debug.Log(wallDistance +" "+ rayHitInfo.collider.gameObject.tag+" "+currentTarget);
+//		Debug.Log(wallDistance +" "+ rayHitInfo.collider.gameObject.tag+" "+currentTarget);
 		
 		switch (rayHitInfo.collider.gameObject.tag) 
 		{

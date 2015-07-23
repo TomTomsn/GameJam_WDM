@@ -51,7 +51,6 @@ public class PlayerControlls : MonoBehaviour {
 	void Start () {
 
 		//Initialisierung
-		setState (0);   //ANFANGSZUSTAND MOVEMENT
 		spezielleBewegung = false;
 		indexBewegung = -1;
 
@@ -63,7 +62,7 @@ public class PlayerControlls : MonoBehaviour {
 
 // TEST / DEBUG -------------------------------------------------------------------------
 		/* ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG */
-
+		setState (0);   //ANFANGSZUSTAND MOVEMENT
 
 	} //ENDE Start()
 
@@ -222,7 +221,6 @@ public class PlayerControlls : MonoBehaviour {
 // TRIGGER -----------------------------------------------------------------------------
 	void OnTriggerEnter(Collider collision)
 	{
-		Debug.Log ("Kollision");
 		if (collision.gameObject.tag == "State0") {
 
 			groundPlate = collision.transform.parent.gameObject;
